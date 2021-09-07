@@ -1,70 +1,53 @@
 import io.github.bonigarcia.wdm.WebDriverManager;
-
 import org.openqa.selenium.By;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.interactions.Action;
-
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class main {
 
-    public static ArrayList<String> listUrl = new ArrayList<>();
-    public static void main(String[] args) {
-        listUrl.add("https://www.dns-shop.ru");
-        for (int i =0 ; i< getLinks().size(); i++ ){
-            System.out.println(getLinks().get(i));
-        }
+    public static ArrayList<String> catalogUrl = new ArrayList<>();
+    public static ArrayList<String> subCatalogUrl = new ArrayList<>();
+    public static void main(String[] args) throws InterruptedException {
+            getLinks();
 
         }
 
-   public static ArrayList getLinks(){
+   public static void getLinks() throws InterruptedException {
        WebDriver driver;
        WebDriverManager.chromedriver().setup();
        ChromeOptions options = new ChromeOptions();
        options.setHeadless(false);
        driver = new ChromeDriver(options);
-       driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-       int error = 0;
-           for (int i = 0; i < listUrl.size(); i++) {
-               try {
-                   driver.get(listUrl.get(i));
-                   ArrayList<WebElement> elements = new ArrayList<>(driver.findElements(By.tagName("a")));
-                   for (int y = 0; y < elements.size(); y++) {
-                       if (elements.get(y).getAttribute("href") != null && elements.get(y).getAttribute("href").contains("dns")) {
-                           if (elements.get(y).getAttribute("href").contains("product") || elements.get(y).getAttribute("href").contains("catalog")) {
-                               if (listUrl.contains(elements.get(y).getAttribute("href"))) {
-                                   Thread.sleep(50);
-                                   System.out.println("Уже существует");
-                                   continue;
-                               } else {
-                                   Thread.sleep(50);
-                                   listUrl.add(elements.get(y).getAttribute("href"));
-                                   System.out.println("Текущий шаг " + i);
-                                   System.out.println("Всего шагов " + listUrl.size());
-                                   System.out.println("Размер Элементов " + elements.size());
-                                   System.out.println("Колличество ошибок " + error);
-                                   System.out.println(elements.get(y).getAttribute("href"));
-                               }
-                           }
-                       }
-                   }
-                }catch (StaleElementReferenceException | InterruptedException ex){
-                   error++;
-                   System.out.println(ex);
-               }
+       //driver.manage().timeouts().implicitlyWait(2, TimeUnit.SECONDS);
+       List<WebElement> catalog = null;
+       List<WebElement> subCatalog = null;
+       driver.get("https://www.dns-shop.ru/catalog/");
+       ArrayList<WebElement> elements = new ArrayList<>(driver.findElements(By.xpath("//div[@class='subcategory__item subcategory__item_with-childs']")));
+       for (int i = 0; i < elements.size(); i++) {
+           catalog = elements.get(i).findElements(By.xpath("//a[@class='subcategory__childs-item']"));
        }
+       for (int i = 0; i < catalog.size(); i++) {
+           System.out.println("[INFO] колличество ссылок catalog " + i + " " + catalog.get(i).getAttribute("href"));
+           catalogUrl.add(catalog.get(i).getAttribute("href"));
 
-       for (int x = 0; x < listUrl.size(); x++) {
-           System.out.println(listUrl.get(x));
+       }
+       int count = 0;
+       for (int a = 0; a < catalogUrl.size(); a++) {
+           Thread.sleep(50);
+           driver.get(catalogUrl.get(a));
+           subCatalog = new ArrayList<>(driver.findElements(By.xpath("//a[@class='subcategory__item ui-link ui-link_blue']")));
+           for (int i = 0; i < subCatalog.size(); i++) {
+               count++;
+               System.out.println("[INFO] колличество ссылок " + count +" " + subCatalog.get(i).getAttribute("href"));
+               catalogUrl.add(subCatalog.get(i).getAttribute("href"));
+           }
        }
        driver.close();
-       return listUrl;
    }
 }
 
